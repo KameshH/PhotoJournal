@@ -6,6 +6,8 @@ import {
   Text,
   Alert,
   useColorScheme,
+  Modal,
+  TextInput,
 } from 'react-native';
 import {
   Camera,
@@ -22,6 +24,9 @@ interface CameraScreenProps {
 const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
   const [showGrid, setShowGrid] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [showTitleModal, setShowTitleModal] = useState(false);
+  const [photoPath, setPhotoPath] = useState<string>('');
+  const [title, setTitle] = useState('');
   const camera = useRef<Camera>(null);
   const devices = useCameraDevices();
   const device = devices.find(d => d.position === 'back');
@@ -44,44 +49,45 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
       const photo: PhotoFile = await camera.current.takePhoto({
         flash: 'off',
       });
-
-      // Show title input dialog
-      Alert.prompt(
-        'Photo Title',
-        'Enter a title for this photo:',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Save',
-            onPress: async (title: string | undefined) => {
-              if (title) {
-                try {
-                  await addEntry(photo.path, title);
-                  Alert.alert('Success', 'Photo saved successfully!', [
-                    {
-                      text: 'OK',
-                      onPress: () => navigation.goBack(),
-                    },
-                  ]);
-                } catch (error) {
-                  Alert.alert('Error', 'Failed to save photo');
-                }
-              }
-            },
-          },
-        ],
-        'plain-text',
-        '',
-        'default'
-      );
+      setPhotoPath(photo.path);
+      setShowTitleModal(true);
     } catch (error) {
+      console.error('Error capturing photo:', error);
       Alert.alert('Error', 'Failed to capture photo');
     } finally {
       setIsCapturing(false);
     }
+  };
+
+  const savePhoto = async () => {
+    if (!title.trim()) {
+      Alert.alert('Error', 'Please enter a title for the photo');
+      return;
+    }
+
+    try {
+      await addEntry(photoPath, title.trim());
+      Alert.alert('Success', 'Photo saved successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            setShowTitleModal(false);
+            setTitle('');
+            setPhotoPath('');
+            navigation.goBack();
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error('Error saving photo:', error);
+      Alert.alert('Error', 'Failed to save photo');
+    }
+  };
+
+  const cancelSave = () => {
+    setShowTitleModal(false);
+    setTitle('');
+    setPhotoPath('');
   };
 
   const toggleGrid = () => {
@@ -94,7 +100,10 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
         <Text style={styles.permissionText}>
           Camera permission is required to use this feature
         </Text>
-        <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+        <TouchableOpacity
+          style={styles.permissionButton}
+          onPress={requestPermission}
+        >
           <Text style={styles.permissionButtonText}>Grant Permission</Text>
         </TouchableOpacity>
       </View>
@@ -118,15 +127,21 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
         isActive={true}
         photo={true}
       />
-      
+
       {showGrid && (
         <View style={styles.gridOverlay}>
-          {/* Horizontal lines */}
-          <View style={[styles.gridLine, styles.horizontalLine, { top: '33.33%' }]} />
-          <View style={[styles.gridLine, styles.horizontalLine, { top: '66.66%' }]} />
-          {/* Vertical lines */}
-          <View style={[styles.gridLine, styles.verticalLine, { left: '33.33%' }]} />
-          <View style={[styles.gridLine, styles.verticalLine, { left: '66.66%' }]} />
+          <View
+            style={[styles.gridLine, styles.horizontalLine, { top: '33.33%' }]}
+          />
+          <View
+            style={[styles.gridLine, styles.horizontalLine, { top: '66.66%' }]}
+          />
+          <View
+            style={[styles.gridLine, styles.verticalLine, { left: '33.33%' }]}
+          />
+          <View
+            style={[styles.gridLine, styles.verticalLine, { left: '66.66%' }]}
+          />
         </View>
       )}
 
@@ -136,19 +151,61 @@ const CameraScreen: React.FC<CameraScreenProps> = ({ navigation }) => {
             {showGrid ? 'Hide Grid' : 'Show Grid'}
           </Text>
         </TouchableOpacity>
-
         <TouchableOpacity
-          style={[styles.captureButton, isCapturing && styles.captureButtonDisabled]}
+          style={[
+            styles.captureButton,
+            isCapturing && styles.captureButtonDisabled,
+          ]}
           onPress={capturePhoto}
           disabled={isCapturing}
         >
           <View style={styles.captureButtonInner} />
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
       </View>
+      <Modal
+        visible={showTitleModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={cancelSave}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Photo Title</Text>
+            <Text style={styles.modalSubtitle}>
+              Enter a title for this photo:
+            </Text>
+            <TextInput
+              style={styles.titleInput}
+              value={title}
+              onChangeText={setTitle}
+              placeholder="Enter photo title..."
+              placeholderTextColor="#999"
+              autoFocus={true}
+              returnKeyType="done"
+              onSubmitEditing={savePhoto}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity style={styles.modalButton} onPress={cancelSave}>
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={savePhoto}
+              >
+                <Text style={[styles.modalButtonText, styles.saveButtonText]}>
+                  Save
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -259,7 +316,74 @@ const getStyles = (isDarkMode: boolean) =>
       fontSize: 16,
       fontWeight: '600',
     },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      backgroundColor: isDarkMode ? '#333' : '#fff',
+      borderRadius: 12,
+      padding: 20,
+      margin: 20,
+      minWidth: 300,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: isDarkMode ? '#fff' : '#000',
+      marginBottom: 8,
+      textAlign: 'center',
+    },
+    modalSubtitle: {
+      fontSize: 14,
+      color: isDarkMode ? '#ccc' : '#666',
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    titleInput: {
+      borderWidth: 1,
+      borderColor: isDarkMode ? '#555' : '#ddd',
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 16,
+      color: isDarkMode ? '#fff' : '#000',
+      backgroundColor: isDarkMode ? '#444' : '#f9f9f9',
+      marginBottom: 20,
+    },
+    modalButtons: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    modalButton: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      marginHorizontal: 4,
+      backgroundColor: isDarkMode ? '#555' : '#f0f0f0',
+    },
+    saveButton: {
+      backgroundColor: '#007AFF',
+    },
+    modalButtonText: {
+      textAlign: 'center',
+      fontSize: 16,
+      fontWeight: '600',
+      color: isDarkMode ? '#fff' : '#000',
+    },
+    saveButtonText: {
+      color: '#fff',
+    },
   });
 
 export default CameraScreen;
-
