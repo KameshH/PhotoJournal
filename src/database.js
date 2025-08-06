@@ -14,7 +14,7 @@ export const getDB = () => {
     () => {},
     error => {
       console.log('DB Error:', error);
-    }
+    },
   );
 };
 
@@ -29,18 +29,19 @@ export const createTable = () => {
       },
       error => {
         console.log('Error creating table:', error);
-      }
+      },
     );
   });
 };
 
 export const addEntry = (uri, title) => {
   const db = getDB();
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
   return new Promise((resolve, reject) => {
     db.transaction(txn => {
       txn.executeSql(
-        'INSERT INTO entries (uri, title) VALUES (?, ?)',
-        [uri, title],
+        'INSERT INTO entries (uri, title, timestamp) VALUES (?, ?, ?)',
+        [uri, title, now],
         (txn, results) => {
           if (results.rowsAffected > 0) {
             resolve('Entry added successfully');
@@ -50,7 +51,7 @@ export const addEntry = (uri, title) => {
         },
         error => {
           reject(error);
-        }
+        },
       );
     });
   });
@@ -72,13 +73,13 @@ export const getEntries = () => {
         },
         error => {
           reject(error);
-        }
+        },
       );
     });
   });
 };
 
-export const deleteEntry = (id) => {
+export const deleteEntry = id => {
   const db = getDB();
   return new Promise((resolve, reject) => {
     db.transaction(txn => {
@@ -94,7 +95,7 @@ export const deleteEntry = (id) => {
         },
         error => {
           reject(error);
-        }
+        },
       );
     });
   });
@@ -103,5 +104,3 @@ export const deleteEntry = (id) => {
 export const initDB = () => {
   createTable();
 };
-
-
