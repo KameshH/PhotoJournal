@@ -41,7 +41,6 @@ const GalleryScreen: React.FC<GalleryScreenProps> = ({ navigation }) => {
       const data = await getEntries();
       setEntries(data);
     } catch (error) {
-      Alert.alert('Error', 'Failed to load photos');
     } finally {
       setLoading(false);
     }
