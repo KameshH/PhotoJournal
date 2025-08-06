@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -56,15 +56,19 @@ const GalleryScreen: React.FC<GalleryScreenProps> = ({ navigation }) => {
   useFocusEffect(
     useCallback(() => {
       loadEntries();
-    }, [])
+    }, []),
   );
 
   const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    const date = new Date(timestamp + 'Z');
+    return (
+      date.toLocaleDateString() +
+      ' ' +
+      date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    );
   };
 
   const renderItem = ({ item }: { item: Entry }) => (
@@ -77,9 +81,7 @@ const GalleryScreen: React.FC<GalleryScreenProps> = ({ navigation }) => {
         <Text style={styles.title} numberOfLines={2}>
           {item.title}
         </Text>
-        <Text style={styles.timestamp}>
-          {formatDate(item.timestamp)}
-        </Text>
+        <Text style={styles.timestamp}>{formatDate(item.timestamp)}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -108,7 +110,7 @@ const GalleryScreen: React.FC<GalleryScreenProps> = ({ navigation }) => {
       <FlatList
         data={entries}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => item.id.toString()}
         numColumns={2}
         contentContainerStyle={styles.listContainer}
         refreshControl={
@@ -216,4 +218,3 @@ const getStyles = (isDarkMode: boolean) =>
   });
 
 export default GalleryScreen;
-

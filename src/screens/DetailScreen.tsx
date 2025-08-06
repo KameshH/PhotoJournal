@@ -37,16 +37,20 @@ const DetailScreen: React.FC<DetailScreenProps> = ({ route, navigation }) => {
   const styles = getStyles(isDarkMode);
 
   const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }) + ' at ' + date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    const date = new Date(timestamp + 'Z');
+    return (
+      date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }) +
+      ' at ' +
+      date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    );
   };
 
   const handleDelete = () => {
@@ -75,14 +79,17 @@ const DetailScreen: React.FC<DetailScreenProps> = ({ route, navigation }) => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
@@ -90,13 +97,13 @@ const DetailScreen: React.FC<DetailScreenProps> = ({ route, navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: `file://${entry.uri}` }} 
+          <Image
+            source={{ uri: `file://${entry.uri}` }}
             style={styles.image}
             resizeMode="contain"
           />
@@ -180,4 +187,3 @@ const getStyles = (isDarkMode: boolean) =>
   });
 
 export default DetailScreen;
-
